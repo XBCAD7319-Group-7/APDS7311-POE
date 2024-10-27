@@ -8,6 +8,14 @@ const router = express.Router();
 // Regex for username validation: alphanumeric characters and underscores, 5-20 characters long
 const usernameRegex = /^\w{5,20}$/; // Uses concise '\w' syntax
 
+// Environment-based configurations
+const saltRounds = parseInt(process.env.SALT_ROUNDS, 10) || 10; // Configurable salt rounds
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  console.error("JWT_SECRET is not set. Exiting.");
+  process.exit(1);
+}
+
 // Register route
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -23,7 +31,6 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
-    const saltRounds = 10; // Cost factor for hashing the password
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const newUser = new User({ username, password: hashedPassword });
@@ -59,7 +66,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, username: user.username },
-      process.env.JWT_SECRET || 'defaultSecretKey', // Ensure a strong secret key is used in production
+      jwtSecret,
       { expiresIn: '1h' }
     );
 

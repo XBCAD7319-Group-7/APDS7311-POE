@@ -17,27 +17,35 @@ function Register({ onRegisterSuccess }) {
       return;
     }
 
+    // Password strength validation
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('Password must be at least 8 characters long, contain at least one uppercase letter, and one number.');
+      return;
+    }
+
     setIsSubmitting(true);
-    setError('');  // Clear any previous error
+    setError(''); // Clear any previous error
 
     try {
-      await axios.post('http://localhost:5000/api/users/register', {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/users/register`, {
         username,
         password,
       });
       alert('User registered successfully! You can now log in.');
-      setUsername('');  // Clear the form after successful registration
+      setUsername(''); // Clear the form after successful registration
       setPassword('');
       onRegisterSuccess(); // Switch to login form
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);  // Use the error message from the backend
+        setError(err.response.data.message); // Use the error message from the backend
       } else {
         setError('Registration failed. Please try again.');
       }
       console.error('Registration error:', err);
     } finally {
       setIsSubmitting(false);
+      // Clear error message after 5 seconds
+      setTimeout(() => setError(''), 5000);
     }
   };
 
