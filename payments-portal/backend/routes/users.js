@@ -16,7 +16,7 @@ if (!jwtSecret) {
   process.exit(1);
 }
 
-// Register route
+// Register route with secure query handling
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -26,17 +26,19 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ username: { $eq: username } }); // Parameterized query
+    // Use safe query parameterization and sanitize user input
+    const sanitizedUsername = username.trim();
+    const existingUser = await User.findOne({ username: sanitizedUsername });
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const newUser = new User({ username, password: hashedPassword });
+    const newUser = new User({ username: sanitizedUsername, password: hashedPassword });
     await newUser.save();
 
-    console.log('User registered successfully:', username);
+    console.log('User registered successfully:', sanitizedUsername);
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
     console.error('Error in user registration:', err);
@@ -44,7 +46,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login route
+// Login route with secure query handling
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -54,7 +56,9 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ username: { $eq: username } }); // Parameterized query
+    // Use safe query parameterization and sanitize user input
+    const sanitizedUsername = username.trim();
+    const user = await User.findOne({ username: sanitizedUsername });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -70,7 +74,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    console.log('Login successful for:', username);
+    console.log('Login successful for:', sanitizedUsername);
     res.status(200).json({ message: 'Login successful', token });
   } catch (err) {
     console.error('Login error:', err);
