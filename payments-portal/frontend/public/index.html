@@ -1,17 +1,26 @@
 <!DOCTYPE html>
-<html lang="en" xml:lang="en"> <!-- Added xml:lang attribute -->
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Web site created using create-react-app" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>React App</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  </body>
+<html lang="en" xml:lang="en"> <!-- Added lang and xml:lang attributes -->
+<head>
+  <meta charset="utf-8">
+  <title>Node-webkit-based module test</title>
+  <script>
+    function nwModuleTest() {
+      var util = require('util');
+      var moduleFolder = require('nw.gui').App.argv[0];
+      try {
+        require(moduleFolder);
+      } catch (e) {
+        if (process.platform !== 'win32') {
+          util.log('nw-pre-gyp error:');
+          util.log(e.stack);
+        }
+        process.exit(1);
+      }
+      process.exit(0);
+    }
+  </script>
+</head>
+<body onload="nwModuleTest()">
+  <h1>Node-webkit-based module test</h1>
+</body>
 </html>
