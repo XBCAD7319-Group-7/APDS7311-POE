@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User'); // Ensure the path to your model is correct
+const validator = require('validator'); // Import validator for enhanced sanitization
 
 const router = express.Router();
 
@@ -18,27 +19,27 @@ if (!jwtSecret) {
 
 // Register route with secure query handling
 router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  let { username, password } = req.body;
 
-  // Validate username format
+  // Sanitize and validate the username
+  username = validator.escape(username.trim());
   if (!usernameRegex.test(username)) {
     return res.status(400).json({ message: 'Invalid username format. Only alphanumeric and underscores, 5-20 characters long.' });
   }
 
   try {
-    // Use safe query parameterization and sanitize user input
-    const sanitizedUsername = username.trim();
-    const existingUser = await User.findOne({ username: sanitizedUsername });
+    // Parameterized query with fully sanitized username
+    const existingUser = await User.findOne({ username: username });
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const newUser = new User({ username: sanitizedUsername, password: hashedPassword });
+    const newUser = new User({ username: username, password: hashedPassword });
     await newUser.save();
 
-    console.log('User registered successfully:', sanitizedUsername);
+    console.log('User registered successfully:', username);
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
     console.error('Error in user registration:', err);
@@ -48,17 +49,17 @@ router.post('/register', async (req, res) => {
 
 // Login route with secure query handling
 router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  let { username, password } = req.body;
 
-  // Validate username format
+  // Sanitize and validate the username
+  username = validator.escape(username.trim());
   if (!usernameRegex.test(username)) {
     return res.status(400).json({ message: 'Invalid username format.' });
   }
 
   try {
-    // Use safe query parameterization and sanitize user input
-    const sanitizedUsername = username.trim();
-    const user = await User.findOne({ username: sanitizedUsername });
+    // Parameterized query with fully sanitized username
+    const user = await User.findOne({ username: username });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -74,7 +75,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    console.log('Login successful for:', sanitizedUsername);
+    console.log('Login successful for:', username);
     res.status(200).json({ message: 'Login successful', token });
   } catch (err) {
     console.error('Login error:', err);
