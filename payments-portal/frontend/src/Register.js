@@ -18,8 +18,9 @@ function Register({ onRegisterSuccess }) {
     }
 
     // Password strength validation
-    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-      setError('Password must be at least 8 characters long, contain at least one uppercase letter, and one number.');
+    const passwordRegex = /[A-Za-z\d_]{8,}/; // Uses \d instead of [0-9]
+    if (!passwordRegex.test(password)) {
+      setError('Password must be at least 8 characters long and contain letters and numbers.');
       return;
     }
 
@@ -36,16 +37,11 @@ function Register({ onRegisterSuccess }) {
       setPassword('');
       onRegisterSuccess(); // Switch to login form
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message); // Use the error message from the backend
-      } else {
-        setError('Registration failed. Please try again.');
-      }
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
       console.error('Registration error:', err);
     } finally {
       setIsSubmitting(false);
-      // Clear error message after 5 seconds
-      setTimeout(() => setError(''), 5000);
+      setTimeout(() => setError(''), 5000); // Clear error message after 5 seconds
     }
   };
 
