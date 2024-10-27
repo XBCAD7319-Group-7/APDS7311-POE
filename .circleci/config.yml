@@ -11,17 +11,20 @@ jobs:
           command: |
             # Install any dependencies here, if necessary
             echo "Installing dependencies if required"
-- run:
-    name: "Run SonarQube Scan"
-    command: |
-      sonar-scanner \
-        -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
-        -Dsonar.organization="$SONAR_ORG" \
-        -Dsonar.host.url="$SONAR_HOST_URL" \
-        -Dsonar.login="$SONAR_TOKEN" \
-        -Dsonar.sources="." \
-        -Dsonar.branch.name="${CIRCLE_BRANCH}" \
-        -Dsonar.exclusions="**/*.c,**/*.cpp,**/*.h,**/tests/**"
+      - run:
+          name: "Run SonarQube Scan"
+          command: |
+            sonar-scanner \
+              -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
+              -Dsonar.organization="$SONAR_ORG" \
+              -Dsonar.host.url="$SONAR_HOST_URL" \
+              -Dsonar.login="$SONAR_TOKEN" \
+              -Dsonar.sources="." \
+              -Dsonar.branch.name="${CIRCLE_BRANCH}" \
+              -Dsonar.exclusions="**/*.c,**/*.cpp,**/*.h,**/tests/**" \
+              -Dsonar.c.file.suffixes=- \
+              -Dsonar.cpp.file.suffixes=- \
+              -Dsonar.objc.file.suffixes=-
 
 workflows:
   version: 2
