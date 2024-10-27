@@ -6,19 +6,19 @@ const User = require('../models/User'); // Ensure the path to your model is corr
 const router = express.Router();
 
 // Regex for username validation: alphanumeric characters and underscores, 5-20 characters long
-const usernameRegex = /^[a-zA-Z0-9_]{5,20}$/;
+const usernameRegex = /^\w{5,20}$/; // Uses concise '\w' syntax
 
 // Register route
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
-  // Validate username
+  // Validate username format
   if (!usernameRegex.test(username)) {
     return res.status(400).json({ message: 'Invalid username format. Only alphanumeric and underscores, 5-20 characters long.' });
   }
 
   try {
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ username: { $eq: username } }); // Parameterized query
     if (existingUser) {
       return res.status(400).json({ message: 'Username already exists' });
     }
@@ -41,12 +41,13 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
+  // Validate username format
   if (!usernameRegex.test(username)) {
     return res.status(400).json({ message: 'Invalid username format.' });
   }
 
   try {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username: { $eq: username } }); // Parameterized query
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -58,7 +59,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, username: user.username },
-      process.env.JWT_SECRET || 'defaultSecretKey', // Ensure you have a robust secret key
+      process.env.JWT_SECRET || 'defaultSecretKey', // Ensure a strong secret key is used in production
       { expiresIn: '1h' }
     );
 
@@ -70,4 +71,4 @@ router.post('/login', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 
 function Register({ onRegisterSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -14,6 +16,9 @@ function Register({ onRegisterSuccess }) {
       setError('Both username and password are required.');
       return;
     }
+
+    setIsSubmitting(true);
+    setError('');  // Clear any previous error
 
     try {
       await axios.post('http://localhost:5000/api/users/register', {
@@ -30,7 +35,9 @@ function Register({ onRegisterSuccess }) {
       } else {
         setError('Registration failed. Please try again.');
       }
-      console.error(err);
+      console.error('Registration error:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -45,6 +52,7 @@ function Register({ onRegisterSuccess }) {
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Username"
           required
+          disabled={isSubmitting}
         />
         <input
           type="password"
@@ -52,11 +60,19 @@ function Register({ onRegisterSuccess }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           required
+          disabled={isSubmitting}
         />
-        <button type="submit">Register</button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Registering...' : 'Register'}
+        </button>
       </form>
     </div>
   );
 }
+
+// PropTypes for prop validation
+Register.propTypes = {
+  onRegisterSuccess: PropTypes.func.isRequired,
+};
 
 export default Register;
