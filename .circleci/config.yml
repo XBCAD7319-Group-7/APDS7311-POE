@@ -1,40 +1,41 @@
 version: 2.1
 
 jobs:
-  say-hello:
+  sonarqube_scan:
     docker:
-      - image: cimg/base:current
+      - image: sonarsource/sonar-scanner-cli:latest  # Docker image with SonarQube scanner
     steps:
-      - checkout
+      - checkout  # Checks out your code from GitHub
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
-
-  sonarqube:
-    working_directory: ~/build
-    docker:
-      - image: sonarsource/sonar-scanner-cli
-    resource_class: small
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ~/workspace
+          name: "Install Dependencies"
+          command: |
+            # Install any dependencies here, if necessary
+            echo "Installing dependencies if required"
       - run:
           name: "Run SonarQube Scan"
           command: |
-            SONAR_BRANCH="${CIRCLE_BRANCH:-master}"
-            echo "Sonar branch value is: $SONAR_BRANCH"
             sonar-scanner \
               -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
               -Dsonar.organization="$SONAR_ORG" \
-              -Dsonar.host.url="https://sonarcloud.io" \
-              -Dsonar.exclusions="**/android/**,**/ios/**" \
+              -Dsonar.host.url="$SONAR_HOST_URL" \
               -Dsonar.login="$SONAR_TOKEN" \
-              -Dsonar.branch.name="$SONAR_BRANCH" \
-              -Dsonar.sources="."
+              -Dsonar.sources="." \
+              -Dsonar.branch.name="${CIRCLE_BRANCH}" \
+              -Dsonar.exclusions="**/*.c,**/*.cpp,**/*.h,**/tests/**" \
+              -Dsonar.c.file.suffixes=- \
+              -Dsonar.cpp.file.suffixes=- \
+              -Dsonar.objc.file.suffixes=-
 
 workflows:
-  say-hello-workflow:
+  version: 2
+  sonar_scan_workflow:
     jobs:
-      - say-hello
-      - sonarqube
+      - sonarqube_scan:
+          filters:
+            branches:
+              only:
+                - main
+                - Dillon
+                - Alison
+                - Devania
+                - Tawfiq
