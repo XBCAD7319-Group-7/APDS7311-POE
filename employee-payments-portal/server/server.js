@@ -1,51 +1,43 @@
 require('dotenv').config();
 const express = require('express');
-const connectDB = require('./config/db'); // Adjust the path as needed
-
-// Import the user controller
-const userController = require('./controllers/userController'); // Import the entire module
+const cors = require('cors');
+const connectDB = require('./config/db'); // Connect to MongoDB
+const userController = require('./controllers/userController'); // Import userController with login logic
 
 const app = express();
-app.use(express.json()); // To parse JSON requests
+app.use(cors({ origin: 'http://localhost:3000' })); // Allow requests from your frontend
+app.use(express.json()); // Parse JSON request bodies
 
 // Connect to the database
-connectDB();
+connectDB()
+  .then(() => {
+    console.log('MongoDB connected successfully.');
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+  });
 
-// Create a new user
-app.post('/api/users/create', async (req, res) => {
-    const { username, password } = req.body;
-
-    // Validate input
-    if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required' });
-    }
-
-    try {
-        const user = await userController.createUser(username, password);
-        res.status(201).json({ message: 'User created successfully', user });
-    } catch (error) {
-        console.error('Error creating user:', error);
-        res.status(500).json({ message: 'Error creating user', error: error.message });
-    }
-});
-
-// Login Route
+// Login Route (POST)
 app.post('/api/users/login', async (req, res) => {
     const { username, password } = req.body;
 
-    // Validate input
+    // Log the incoming login attempt
+    console.log(`Login attempt for username: ${username}`);
+
     if (!username || !password) {
+        console.warn('Login attempt without username or password');
         return res.status(400).json({ message: 'Username and password are required' });
     }
 
     try {
-        const user = await userController.login(username, password);
-        if (!user) {
-            return res.status(401).json({ message: 'Invalid username or password' }); // Use 401 for unauthorized
-        }
+        const { user, token } = await userController.login(username, password); // Call login method from userController
+
+        // Log successful login
+        console.log(`User ${username} logged in successfully`);
 
         res.json({
             message: 'Login successful',
+            token, // Send token for authenticated sessions
             user: {
                 id: user._id,
                 username: user.username,
@@ -53,8 +45,8 @@ app.post('/api/users/login', async (req, res) => {
             },
         });
     } catch (error) {
-        console.error('Error during login:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error(`Login failed for username: ${username}. Error: ${error.message}`);
+        res.status(401).json({ message: 'Invalid username or password' });
     }
 });
 
@@ -62,4 +54,11 @@ app.post('/api/users/login', async (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log('Listening for incoming requests...');
+});
+
+// Optional: Logging middleware to log requests
+app.use((req, res, next) => {
+    console.log(`${req.method} request for '${req.url}' - ${new Date().toISOString()}`);
+    next();
 });

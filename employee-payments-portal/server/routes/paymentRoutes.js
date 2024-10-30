@@ -1,10 +1,21 @@
-// server/routes/paymentRoutes.js
 const express = require('express');
-const { createPayment, getPayments } = require('../controllers/paymentController');
-const auth = require('../middleware/auth');
+const { checkAuth } = require('../middleware/auth');
+const { createPayment, getPayments } = require('../controllers/paymentController'); // Ensure these are correct
+const { check, validationResult } = require('express-validator');
+
 const router = express.Router();
 
-router.post('/', auth, createPayment);
-router.get('/', auth, getPayments);
+// Define routes with appropriate callback functions
+router.get('/', checkAuth, getPayments);
+router.post(
+    '/',
+    checkAuth,
+    [
+        check('amount').isFloat({ gt: 0 }).withMessage('Amount must be positive'),
+        check('currency').isLength(3).withMessage('Invalid currency format'),
+        check('swiftCode').isLength({ min: 8, max: 11 }).withMessage('Invalid SWIFT code')
+    ],
+    createPayment // Ensure this function is used correctly here
+);
 
 module.exports = router;

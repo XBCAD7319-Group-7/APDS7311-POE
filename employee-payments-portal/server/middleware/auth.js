@@ -1,19 +1,19 @@
-// server/middleware/auth.js
+// middleware/auth.js
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../config/jwt');
+const User = require('../models/User');
 
-const auth = (req, res, next) => {
-    const token = req.header('Authorization')?.split(' ')[1];
-
-    if (!token) return res.status(401).json({ message: 'Access denied' });
+const checkAuth = (req, res, next) => {
+    const token = req.headers['authorization']?.split(' ')[1]; // Extract Bearer token
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
 
     try {
-        const verified = jwt.verify(token, JWT_SECRET);
-        req.user = verified;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // Make sure req.user contains userId or other necessary data
         next();
     } catch (error) {
-        res.status(400).json({ message: 'Invalid token' });
+        return res.status(401).json({ message: "Invalid token" });
     }
 };
 
-module.exports = auth;
+
+module.exports = { checkAuth };

@@ -1,30 +1,63 @@
-const Payment = require('../models/Payment');
-
+// Payment Controller (with specific status codes)
 const createPayment = async (req, res) => {
-    const { amount, currency, recipient } = req.body;
+    console.log('Received payment data:', req.body);
+    const { amount, currency, swiftCode, recipientAccountNumber } = req.body;
 
-    // Simple input validation
-    const amountPattern = /^[0-9]+(\.[0-9]{1,2})?$/; // Example regex for amount
-    const currencyPattern = /^[A-Z]{3}$/; // 3-letter currency code
-    const recipientPattern = /^[a-zA-Z0-9\s]+$/; // Alphanumeric names
-
-    if (!amountPattern.test(amount) || !currencyPattern.test(currency) || !recipientPattern.test(recipient)) {
-        return res.status(400).json({ message: 'Invalid input' });
+    // Validate input
+    if (!amount || !currency || !swiftCode || !recipientAccountNumber) {
+        return res.status(400).json({ message: 'All fields are required: amount, currency, swift code, recipient account number' });
     }
 
-    const newPayment = new Payment({ amount, currency, recipient });
-    await newPayment.save();
-    res.status(201).json(newPayment);
+    // Ensure amount is a positive number
+    const amountNumber = Number(amount);
+    if (isNaN(amountNumber) || amountNumber <= 0) {
+        return res.status(400).json({ message: 'Amount must be a positive number' });
+    }
+
+    // Ensure currency is in uppercase
+    const formattedCurrency = currency.toUpperCase();
+
+    try {
+        const newPayment = new Payment({ 
+            userId: req.user.userId, // Include userId here
+            amount: amountNumber, 
+            currency: formattedCurrency, 
+            swiftCode, 
+            recipientAccountNumber 
+        });
+        await newPayment.save();
+        res.status(201).json(newPayment);
+    } catch (error) {
+        console.error('Error creating payment:', error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: 'Validation error', errors: error.errors });
+        }
+        res.status(500).json({
+            message: 'Internal Server Error: Could not create payment',
+            error: {
+                name: error.name,
+                message: error.message,
+            },
+        });
+    }
 };
 
-// Define the getPayments function
+// controllers/paymentController.js
+const Payment = require('../models/Payment');
+
+// Get all payments
 const getPayments = async (req, res) => {
     try {
-        const payments = await Payment.find(); // Fetches all payments
+        const payments = await Payment.find({ userId: req.user.userId }); // Filter payments by user
+        if (!payments.length) {
+            return res.status(404).json({ message: 'No payments found' });
+        }
         res.status(200).json(payments);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching payments' });
+        console.error('Error fetching payments:', error);
+        res.status(500).json({ message: 'Internal Server Error: Could not fetch payments' });
     }
 };
 
 module.exports = { createPayment, getPayments };
+
