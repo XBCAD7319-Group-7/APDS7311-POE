@@ -1,20 +1,43 @@
 version: 2.1
 
 jobs:
-  sonarqube_scan:
+  build:
     docker:
-      - image: sonarsource/sonar-scanner-cli:latest  # Docker image with SonarQube scanner
+      - image: circleci/node:latest  # Docker image for building the application
     steps:
-      - checkout  # Checks out your code from GitHub
+      - checkout
       - run:
           name: "Install Dependencies"
           command: |
-            # Install any dependencies here, if necessary
-            echo "Installing dependencies if required"
+            npm install --prefix payments-portal/backend
+      - run:
+          name: "Build Application"
+          command: |
+            npm run build --prefix payments-portal/backend
+
+  test:
+    docker:
+      - image: circleci/node:latest
+    steps:
+      - checkout
+      - run:
+          name: "Install Dependencies"
+          command: |
+            npm install --prefix payments-portal/backend
+      - run:
+          name: "Run Tests"
+          command: |
+            npm test --prefix payments-portal/backend
+
+  sonarqube_scan:
+    docker:
+      - image: sonarsource/sonar-scanner-cli:latest
+    steps:
+      - checkout
       - run:
           name: "Run SonarQube Scan"
           command: |
-            sonar-scanner \
+            cd payments-portal/backend && sonar-scanner \
               -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
               -Dsonar.organization="$SONAR_ORG" \
               -Dsonar.host.url="$SONAR_HOST_URL" \
@@ -28,9 +51,13 @@ jobs:
 
 workflows:
   version: 2
-  sonar_scan_workflow:
+  devsecops_pipeline:
     jobs:
+      - build
+      - test
       - sonarqube_scan:
+          requires:
+            - test
           filters:
             branches:
               only:
