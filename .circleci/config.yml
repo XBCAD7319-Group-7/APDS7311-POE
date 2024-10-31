@@ -7,18 +7,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Navigate to Backend Directory"
-          command: cd payments-portal/backend
-      - run:
           name: "Install Dependencies"
           command: |
-            cd payments-portal/backend
-            npm install
+            npm install --prefix payments-portal/backend
       - run:
           name: "Build Application"
           command: |
-            cd payments-portal/backend
-            npm run build  # Adjust based on your build process
+            npm run build --prefix payments-portal/backend
 
   test:
     docker:
@@ -26,18 +21,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: "Navigate to Backend Directory"
-          command: cd payments-portal/backend
-      - run:
           name: "Install Dependencies"
           command: |
-            cd payments-portal/backend
-            npm install
+            npm install --prefix payments-portal/backend
       - run:
           name: "Run Tests"
           command: |
-            cd payments-portal/backend
-            npm test  # Adjust based on your testing setup
+            npm test --prefix payments-portal/backend
 
   sonarqube_scan:
     docker:
@@ -47,8 +37,7 @@ jobs:
       - run:
           name: "Run SonarQube Scan"
           command: |
-            cd payments-portal/backend
-            sonar-scanner \
+            cd payments-portal/backend && sonar-scanner \
               -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
               -Dsonar.organization="$SONAR_ORG" \
               -Dsonar.host.url="$SONAR_HOST_URL" \
