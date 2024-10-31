@@ -1,16 +1,41 @@
 version: 2.1
 
 jobs:
-  sonarqube_scan:
+  build:
     docker:
-      - image: sonarsource/sonar-scanner-cli:latest  # Docker image with SonarQube scanner
+      - image: circleci/node:latest  # Docker image for building the application
     steps:
-      - checkout  # Checks out your code from GitHub
+      - checkout
       - run:
           name: "Install Dependencies"
           command: |
-            # Install any dependencies here, if necessary
-            echo "Installing dependencies if required"
+            echo "Installing project dependencies"
+            npm install  # Adjust this for your dependency manager if not using Node.js
+      - run:
+          name: "Build Application"
+          command: |
+            echo "Building the application"
+            npm run build  # Modify this command based on your build process
+
+  test:
+    docker:
+      - image: circleci/node:latest
+    steps:
+      - checkout
+      - run:
+          name: "Install Dependencies"
+          command: npm install
+      - run:
+          name: "Run Tests"
+          command: |
+            echo "Running unit and integration tests"
+            npm test  # Modify this to match your testing setup
+
+  sonarqube_scan:
+    docker:
+      - image: sonarsource/sonar-scanner-cli:latest
+    steps:
+      - checkout
       - run:
           name: "Run SonarQube Scan"
           command: |
@@ -28,9 +53,13 @@ jobs:
 
 workflows:
   version: 2
-  sonar_scan_workflow:
+  devsecops_pipeline:
     jobs:
+      - build
+      - test
       - sonarqube_scan:
+          requires:
+            - test
           filters:
             branches:
               only:
