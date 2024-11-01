@@ -5,39 +5,45 @@ console.log("Environment variables loaded.");
 console.log("MONGODB_URI:", process.env.MONGODB_URI);
 
 const mongoose = require('mongoose');
+const User = require('./models/User'); // Adjust path if necessary
+const connectDB = require('./config/db'); // Adjust path if necessary
 const bcrypt = require('bcrypt');
-const User = require('./models/User'); // Make sure this path is correct
-const connectDB = require('./config/db');
 
-const createUser = async (username, plainPassword) => {
+// Connect to the database
+connectDB()
+    .then(() => {
+        console.log("Database connected.");
+        // Start the user creation process here
+        return createUser('allowedUser1', 'StrongPass@123');
+    })
+    .catch(err => {
+        console.error("Database connection error:", err);
+        process.exit(1); // Exit the process if the database connection fails
+    });
+
+// Define a regex pattern for a strong password
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+// Create User Function Example
+const createUser = async (username, password) => {
     try {
-        await connectDB(); // Connect to MongoDB
-        console.log("Database connection established.");
-
-        // Check if the user already exists
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            console.log('User already exists:', existingUser);
-            return existingUser; // Exit if the user exists
+        // Check if password meets the regex requirement
+        if (!passwordRegex.test(password)) {
+            throw new Error('Password does not meet the required complexity.');
         }
 
-        const hashedPassword = await bcrypt.hash(plainPassword, 10);
-        console.log('Hashed password:', hashedPassword);
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            throw new Error('Username already exists');
+        }
 
-        const newUser = new User({ username, password: hashedPassword, role: 'user' });
-        console.log('New user object:', newUser);
-
-        await newUser.save(); // Save the user to the database
-        console.log('User created successfully:', newUser);
-        return newUser; // Return the created user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        console.log(`Creating user ${username} with hashed password: ${hashedPassword}`); // Log the hashed password
+        
+        const newUser = new User({ username, password: hashedPassword });
+        await newUser.save();
+        console.log(`User ${username} created successfully.`);
     } catch (error) {
-        console.error('Error creating user:', error.message);
-        throw error; // Re-throw the error to be handled by the caller
-    } finally {
-        await mongoose.connection.close(); // Ensure the connection closes
-        console.log('Database connection closed');
+        console.error("Error creating user:", error.message);
     }
 };
-
-
-createUser().catch(console.error);

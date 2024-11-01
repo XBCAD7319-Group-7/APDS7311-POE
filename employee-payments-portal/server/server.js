@@ -4,17 +4,18 @@ const cors = require('cors');
 const connectDB = require('./config/db'); // Connect to MongoDB
 const userController = require('./controllers/userController'); // Import userController with login logic
 const paymentRoutes = require('./routes/paymentRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 app.use(cors({ origin: 'http://localhost:3000' })); // Allow requests from your frontend
 app.use(express.json()); // Parse JSON request bodies
+app.use('/api/users', userRoutes);
 
 // Optional: Logging middleware to log requests
 app.use((req, res, next) => {
     console.log(`${req.method} request for '${req.url}' - ${new Date().toISOString()}`);
     next();
 });
-
 
 // Connect to the database
 connectDB()
@@ -25,9 +26,7 @@ connectDB()
     console.error('MongoDB connection error:', error);
   });
 
-  // After successful database connection
-app.use('/api/payments', paymentRoutes); // Register payment routes
-
+  app.use('/api/payments', paymentRoutes); // Register payment routes
 
 // Login Route (POST)
 app.post('/api/users/login', async (req, res) => {
